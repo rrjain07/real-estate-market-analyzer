@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+
+{% block title %}Pan-India Real Estate Scraper | BeautifulSoup Module{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="fw-bold text-dark mb-1">Pan-India Web Scraper Module</h1>
+        <p class="text-secondary mb-0">Automated extraction and parsing of live real estate listings across any Indian city using <code>BeautifulSoup</code> & <code>Requests</code>.</p>
+    </div>
+</div>
+
+<!-- Architecture & Pipeline Banner -->
+<div class="card p-4 mb-4 bg-light border">
+    <div class="row align-items-center">
+        <div class="col-md-8">
+            <h5 class="fw-bold text-dark mb-1"><i class="fa-solid fa-spider text-primary me-2"></i>How the Scraper Engine Works</h5>
+            <p class="small text-secondary mb-0">
+                The scraper uses desktop User-Agent headers to query Indian real estate feeds, parses HTML DOM nodes with <b>BeautifulSoup (html.parser)</b>, extracts titles, prices, square footage, and BHK attributes using regular expressions, and normalizes them into structured JSON records.
+            </p>
+        </div>
+        <div class="col-md-4 text-md-end mt-3 mt-md-0">
+            <span class="badge bg-primary px-3 py-2 fs-6"><i class="fa-solid fa-code me-1"></i> BeautifulSoup4 + Regex</span>
+        </div>
+    </div>
+</div>
+
+<!-- Scraper Query Bar -->
+<div class="card p-4 mb-4">
+    <form action="{{ url_for('web_scraper') }}" method="GET" class="row g-3 align-items-end">
+        <div class="col-md-8">
+            <label class="form-label small fw-semibold">City or Locality Search Query</label>
+            <div class="input-group">
+                <span class="input-group-text bg-white"><i class="fa-solid fa-location-dot text-muted"></i></span>
+                <input type="text" name="city" class="form-control" value="{{ city }}" placeholder="e.g. Mumbai, Gurgaon, Bangalore, Hyderabad, Pune" required>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <button type="submit" class="btn btn-primary w-100 fw-semibold">
+                <i class="fa-solid fa-arrows-rotate me-1"></i> Scrape Recent Listings
+            </button>
+        </div>
+    </form>
+</div>
+
+<!-- Scraped Listings Table -->
+<div class="card p-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h5 class="fw-bold mb-0">
+            <i class="fa-solid fa-list-check text-success me-2"></i>Scraped Listings for "{{ city }}"
+            <span class="badge bg-success-subtle text-success ms-2">{{ listings|length }} Records Extracted</span>
+        </h5>
+        <small class="text-muted"><i class="fa-solid fa-clock me-1"></i> Parsed via BeautifulSoup</small>
+    </div>
+
+    {% if listings %}
+    <div class="table-responsive">
+        <table class="table table-custom table-hover align-middle mb-0">
+            <thead>
+                <tr>
+                    <th>Listing Title</th>
+                    <th>Locality / Metro</th>
+                    <th>Configuration</th>
+                    <th>Area (Sq.Ft.)</th>
+                    <th>Price</th>
+                    <th>Rate / Sq.Ft.</th>
+                    <th>Source Engine</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in listings %}
+                <tr>
+                    <td class="fw-bold text-dark">{{ item.title }}</td>
+                    <td><span class="badge bg-light text-dark border">{{ item.location }}</span></td>
+                    <td><span class="badge bg-secondary-subtle text-secondary">{{ item.bhk }} BHK</span></td>
+                    <td>{{ item.sqft }} sq.ft</td>
+                    <td class="fw-bold text-primary">₹ {{ item.price_lakhs }} L</td>
+                    <td>₹ {{ "{:,}".format(item.price_per_sqft) }}</td>
+                    <td>
+                        <span class="badge bg-light text-muted border">
+                            <i class="fa-solid fa-globe me-1"></i> {{ item.source }}
+                        </span>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="text-center py-5 text-muted">
+        <i class="fa-solid fa-satellite-dish fs-1 mb-2"></i>
+        <h6>No listings found for this query.</h6>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

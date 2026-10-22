@@ -1,0 +1,230 @@
+{% extends "base.html" %}
+
+{% block title %}Pan-India Dashboard | Real Estate Market Analysis Tool{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<div class="row align-items-center mb-3">
+    <div class="col-lg-8">
+        <h1 class="fw-bold text-dark mb-1">Pan-India Real Estate Market Intelligence</h1>
+        <p class="text-secondary mb-0">Market trends, algorithmic price forecasting, and high-yield investment opportunities across India's top 8 Metros.</p>
+    </div>
+    <div class="col-lg-4 text-lg-end mt-3 mt-lg-0">
+        <a href="{{ url_for('investments') }}" class="btn btn-warning fw-semibold px-3 py-2 shadow-sm rounded-pill text-dark">
+            <i class="fa-solid fa-gem me-1"></i> Discover National Deals
+        </a>
+    </div>
+</div>
+
+<!-- City Filter Bar (Pills) -->
+<div class="card p-2 mb-4 bg-white shadow-sm border-0">
+    <div class="d-flex align-items-center flex-wrap gap-2">
+        <span class="small fw-bold text-muted ms-2 me-1"><i class="fa-solid fa-location-dot text-primary me-1"></i>Select Market:</span>
+        <a href="{{ url_for('index', city='All') }}" class="btn btn-sm {% if selected_city == 'All' %}btn-primary{% else %}btn-light border{% endif %} rounded-pill px-3">
+            🇮🇳 All India (8 Metros)
+        </a>
+        {% for c in cities %}
+        <a href="{{ url_for('index', city=c) }}" class="btn btn-sm {% if selected_city == c %}btn-primary{% else %}btn-light border{% endif %} rounded-pill px-3">
+            {{ c }}
+        </a>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- KPI Stat Cards Row -->
+<div class="row g-3 mb-4">
+    <div class="col-sm-6 col-xl-3">
+        <div class="kpi-card shadow-sm d-flex align-items-center justify-content-between">
+            <div>
+                <div class="kpi-label">Market Scope</div>
+                <div class="kpi-val fs-4">{{ overview.scope }}</div>
+                <small class="text-success fw-medium"><i class="fa-solid fa-check-circle"></i> Active Coverage</small>
+            </div>
+            <div class="kpi-icon bg-primary-subtle text-primary">
+                <i class="fa-solid fa-city"></i>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <div class="kpi-card shadow-sm d-flex align-items-center justify-content-between">
+            <div>
+                <div class="kpi-label">Average Rate / Sq.Ft.</div>
+                <div class="kpi-val">₹ {{ "{:,}".format(overview.avg_price_per_sqft) }}</div>
+                <small class="text-primary fw-medium"><i class="fa-solid fa-chart-line"></i> Benchmark Rate</small>
+            </div>
+            <div class="kpi-icon bg-info-subtle text-info">
+                <i class="fa-solid fa-ruler-combined"></i>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <div class="kpi-card shadow-sm d-flex align-items-center justify-content-between">
+            <div>
+                <div class="kpi-label">Median Home Price</div>
+                <div class="kpi-val">₹ {{ overview.median_price_lakhs }} L</div>
+                <small class="text-muted">Standard 2-3 BHK unit</small>
+            </div>
+            <div class="kpi-icon bg-success-subtle text-success">
+                <i class="fa-solid fa-indian-rupee-sign"></i>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <div class="kpi-card shadow-sm d-flex align-items-center justify-content-between">
+            <div>
+                <div class="kpi-label">Monitored Localities</div>
+                <div class="kpi-val">{{ overview.total_localities }}</div>
+                <small class="text-muted">High-Demand Corridors</small>
+            </div>
+            <div class="kpi-icon bg-warning-subtle text-warning">
+                <i class="fa-solid fa-map-location-dot"></i>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Middle Row: National Metro Chart & Quick Pan-India Estimator -->
+<div class="row g-4 mb-4">
+    <div class="col-lg-6">
+        <div class="card h-100 p-3">
+            <h5 class="fw-bold mb-2"><i class="fa-solid fa-chart-bar text-primary me-2"></i>National Metro Rates</h5>
+            <div id="metroRateChart"></div>
+            <div class="small text-muted text-center mt-2">
+                Mumbai (MMR) commands the highest premium, while Hyderabad and Bangalore lead in commercial tech capital growth.
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-6">
+        <div class="card h-100 p-4">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="fw-bold mb-0"><i class="fa-solid fa-bolt text-warning me-2"></i>Pan-India Valuation Estimator</h5>
+                <span class="badge bg-primary-subtle text-primary">Multi-City Model</span>
+            </div>
+            <form action="{{ url_for('forecast') }}" method="POST">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label small fw-semibold">City / Metro</label>
+                        <select name="city" id="citySelect" class="form-select" onchange="updateLocalities()">
+                            {% for c in cities %}
+                            <option value="{{ c }}" {% if c == 'Bangalore' %}selected{% endif %}>{{ c }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label small fw-semibold">Locality / Corridor</label>
+                        <select name="location" id="localitySelect" class="form-select">
+                            {% for loc in initial_localities %}
+                            <option value="{{ loc }}">{{ loc }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label small fw-semibold">Carpet Area (Sq. Ft.)</label>
+                        <input type="number" name="sqft" class="form-control" value="1250" min="300" max="15000" step="50" required>
+                    </div>
+                    <div class="col-md-3 col-6">
+                        <label class="form-label small fw-semibold">Bedrooms</label>
+                        <select name="bhk" class="form-select">
+                            <option value="1">1 BHK</option>
+                            <option value="2" selected>2 BHK</option>
+                            <option value="3">3 BHK</option>
+                            <option value="4">4 BHK</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3 col-6">
+                        <label class="form-label small fw-semibold">Baths</label>
+                        <select name="bath" class="form-select">
+                            <option value="1">1</option>
+                            <option value="2" selected>2</option>
+                            <option value="3">3</option>
+                            <option value="4">4</option>
+                        </select>
+                    </div>
+                    <div class="col-12 mt-4">
+                        <button type="submit" class="btn btn-primary w-100 py-2 fw-semibold">
+                            <i class="fa-solid fa-chart-line me-1"></i> Calculate Valuation & 5-Yr Forecast
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Bottom Section: High-Yield Pan-India Investment Opportunities -->
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+        <h4 class="fw-bold mb-0"><i class="fa-solid fa-gem text-warning me-2"></i>High-Yield Opportunities Spotlight</h4>
+        <p class="text-muted small mb-0">Properties priced significantly below area average with strong combined ROI (Rental Yield + CAGR).</p>
+    </div>
+    <a href="{{ url_for('investments', city=selected_city) }}" class="btn btn-outline-primary btn-sm rounded-pill px-3">
+        View All Opportunities <i class="fa-solid fa-arrow-right ms-1"></i>
+    </a>
+</div>
+
+<div class="row g-3">
+    {% for op in top_opportunities %}
+    <div class="col-md-6 col-lg-3">
+        <div class="card card-hover h-100 p-3">
+            <div class="d-flex justify-content-between align-items-start mb-2">
+                <span class="badge bg-primary-subtle text-primary">{{ op.city }}</span>
+                <span class="ioi-badge ioi-badge-high">
+                    <i class="fa-solid fa-fire text-danger"></i> IOI: {{ op.ioi_score }}
+                </span>
+            </div>
+            <h6 class="fw-bold text-dark text-truncate mb-0">{{ op.location }}</h6>
+            <small class="text-muted d-block mb-2">{{ op.bhk }} BHK • {{ op.total_sqft }} sq.ft</small>
+            <div class="text-primary fw-bold fs-5 mb-2">₹ {{ op.price_lakhs }} L</div>
+            
+            <div class="small text-muted mb-3 border-top border-bottom py-2">
+                <div class="d-flex justify-content-between mb-1">
+                    <span>Discount vs Area:</span>
+                    <span class="fw-semibold text-success">-{{ op.discount_pct }}% Below Avg</span>
+                </div>
+                <div class="d-flex justify-content-between mb-1">
+                    <span>Rental Yield:</span>
+                    <span class="fw-semibold text-dark">{{ op.rental_yield }}% p.a.</span>
+                </div>
+                <div class="d-flex justify-content-between">
+                    <span>Est. Total ROI:</span>
+                    <span class="fw-bold text-primary">{{ op.total_roi }}%</span>
+                </div>
+            </div>
+
+            <a href="{{ url_for('investments', city=op.city) }}" class="btn btn-sm btn-outline-secondary w-100 mt-auto">
+                Explore in {{ op.city }}
+            </a>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    var metroChartData = {{ metro_chart_json | safe }};
+    Plotly.newPlot('metroRateChart', metroChartData.data, metroChartData.layout, {responsive: true, displayModeBar: false});
+
+    function updateLocalities() {
+        const city = document.getElementById('citySelect').value;
+        const locSelect = document.getElementById('localitySelect');
+        locSelect.innerHTML = '<option>Loading...</option>';
+        
+        fetch(`/api/localities?city=${encodeURIComponent(city)}`)
+            .then(res => res.json())
+            .then(data => {
+                locSelect.innerHTML = '';
+                data.localities.forEach(loc => {
+                    const opt = document.createElement('option');
+                    opt.value = loc;
+                    opt.textContent = loc;
+                    locSelect.appendChild(opt);
+                });
+            })
+            .catch(() => {
+                locSelect.innerHTML = '<option>Error loading localities</option>';
+            });
+    }
+</script>
+{% endblock %}

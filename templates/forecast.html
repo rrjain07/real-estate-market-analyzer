@@ -1,0 +1,183 @@
+{% extends "base.html" %}
+
+{% block title %}Pan-India Price Forecast & Valuation | Real Estate Market Analysis Tool{% endblock %}
+
+{% block content %}
+<div class="mb-4">
+    <h1 class="fw-bold text-dark mb-1">Pan-India Real Estate Price Valuation & 5-Year Forecast</h1>
+    <p class="text-secondary mb-0">Predict current property market valuations and calculate 5-year capital appreciation trajectories across 8 Indian Metros.</p>
+</div>
+
+<div class="row g-4">
+    <!-- Left Column: Input Form -->
+    <div class="col-lg-5">
+        <div class="card p-4 h-100">
+            <h5 class="fw-bold mb-3"><i class="fa-solid fa-sliders text-primary me-2"></i>Property Parameters</h5>
+            <form action="{{ url_for('forecast') }}" method="POST">
+                <div class="mb-3">
+                    <label class="form-label small fw-semibold">City / Metro</label>
+                    <select name="city" id="forecastCity" class="form-select" onchange="updateForecastLocalities()" required>
+                        {% for c in cities %}
+                        <option value="{{ c }}" {% if c == selected_city %}selected{% endif %}>{{ c }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label small fw-semibold">Locality / Corridor</label>
+                    <select name="location" id="forecastLocality" class="form-select" required>
+                        {% for loc in localities %}
+                        <option value="{{ loc }}" {% if loc == selected_location %}selected{% endif %}>{{ loc }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="mb-3">
+                    <label class="form-label small fw-semibold">Total Area (Square Feet)</label>
+                    <input type="number" name="sqft" class="form-control" value="{{ sqft|int }}" min="300" max="15000" step="50" required>
+                    <div class="form-text">Typical 2-3 BHK units in Indian metros range from 750 to 2500 sq ft.</div>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-6">
+                        <label class="form-label small fw-semibold">Bedrooms (BHK)</label>
+                        <select name="bhk" class="form-select">
+                            {% for b in [1, 2, 3, 4, 5] %}
+                            <option value="{{ b }}" {% if b == bhk %}selected{% endif %}>{{ b }} BHK</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label small fw-semibold">Bathrooms</label>
+                        <select name="bath" class="form-select">
+                            {% for bt in [1, 2, 3, 4, 5] %}
+                            <option value="{{ bt }}" {% if bt == bath %}selected{% endif %}>{{ bt }} Bath</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-primary w-100 py-2 fw-semibold shadow-sm">
+                    <i class="fa-solid fa-chart-line me-1"></i> Calculate Valuation & 5-Yr Forecast
+                </button>
+            </form>
+
+            <div class="mt-4 p-3 bg-light rounded-3 border">
+                <h6 class="fw-bold mb-1 small text-uppercase text-secondary">Multivariate Indian Metro Valuation Model</h6>
+                <p class="small text-muted mb-0">
+                    Calculates valuation factoring in city real estate baseline indices, neighborhood infrastructure tiers, and corridor-specific CAGRs (6.8% – 13.5%).
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Right Column: Results & Projections -->
+    <div class="col-lg-7">
+        {% if result %}
+        <div class="card p-4 mb-4">
+            <!-- Hero Valuation Card -->
+            <div class="forecast-hero-card shadow mb-4">
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                    <span class="text-uppercase small tracking-wide text-white-50 fw-bold">Estimated Market Valuation</span>
+                    <span class="badge bg-white text-primary fw-bold">{{ result.city }} &bull; {{ result.growth.tier }}</span>
+                </div>
+                <div class="price-hero-val">
+                    ₹ {{ result.price_lakhs }} <span class="fs-4">Lakhs</span>
+                </div>
+                <div class="d-flex justify-content-between align-items-center mt-2 small text-white-50 border-top border-white-50 pt-2">
+                    <span>Effective Rate: <b>₹ {{ "{:,}".format(result.price_per_sqft) }} / Sq.Ft.</b></span>
+                    <span>Configuration: <b>{{ result.bhk }} BHK • {{ result.bath }} Bath ({{ result.sqft|int }} sqft)</b></span>
+                </div>
+            </div>
+
+            <!-- Plotly 5-Year Growth Trajectory -->
+            <h6 class="fw-bold mb-2"><i class="fa-solid fa-arrow-trend-up text-primary me-2"></i>5-Year Capital Appreciation Trajectory</h6>
+            <div id="forecastChart"></div>
+
+            <!-- Table of Annual Value Projections -->
+            <div class="table-responsive mt-3">
+                <table class="table table-bordered table-sm text-center mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Timeline</th>
+                            <th>Current</th>
+                            <th>Year 1</th>
+                            <th>Year 3</th>
+                            <th>Year 5</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="fw-semibold">Valuation</td>
+                            <td class="text-muted">₹ {{ result.price_lakhs }} L</td>
+                            <td>₹ {{ result.growth.year_1 }} L</td>
+                            <td>₹ {{ result.growth.year_3 }} L</td>
+                            <td class="fw-bold text-success">₹ {{ result.growth.year_5 }} L</td>
+                        </tr>
+                        <tr>
+                            <td class="fw-semibold">Gain</td>
+                            <td>-</td>
+                            <td class="text-success">+₹ {{ (result.growth.year_1 - result.price_lakhs)|round(2) }} L</td>
+                            <td class="text-success">+₹ {{ (result.growth.year_3 - result.price_lakhs)|round(2) }} L</td>
+                            <td class="fw-bold text-success">+₹ {{ (result.growth.year_5 - result.price_lakhs)|round(2) }} L</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Mortgage & Growth KPI -->
+            <div class="row g-2 mt-3">
+                <div class="col-sm-6">
+                    <div class="p-3 bg-light rounded border text-center">
+                        <small class="text-muted d-block">Estimated Monthly EMI (20 Yrs @ 8.5%)</small>
+                        <h4 class="fw-bold text-dark mb-0 mt-1">₹ {{ "{:,}".format(result.emi) }} <span class="fs-6 text-muted">/ mo</span></h4>
+                    </div>
+                </div>
+                <div class="col-sm-6">
+                    <div class="p-3 bg-light rounded border text-center">
+                        <small class="text-muted d-block">Locality CAGR & Rental Yield</small>
+                        <h4 class="fw-bold text-primary mb-0 mt-1">{{ result.growth.cagr_percent }}% <span class="fs-6 text-muted">+ {{ result.growth.rental_yield }}% yield</span></h4>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <div class="card p-5 text-center text-muted h-100 d-flex justify-content-center align-items-center">
+            <i class="fa-solid fa-calculator fs-1 mb-3 text-secondary"></i>
+            <h5>Awaiting Parameters</h5>
+            <p class="small text-secondary mb-0">Select your metro city, corridor, square footage, and BHK to view real-time valuation and 5-year capital appreciation trajectory.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function updateForecastLocalities() {
+        const city = document.getElementById('forecastCity').value;
+        const locSelect = document.getElementById('forecastLocality');
+        locSelect.innerHTML = '<option>Loading...</option>';
+        
+        fetch(`/api/localities?city=${encodeURIComponent(city)}`)
+            .then(res => res.json())
+            .then(data => {
+                locSelect.innerHTML = '';
+                data.localities.forEach(loc => {
+                    const opt = document.createElement('option');
+                    opt.value = loc;
+                    opt.textContent = loc;
+                    locSelect.appendChild(opt);
+                });
+            })
+            .catch(() => {
+                locSelect.innerHTML = '<option>Error loading localities</option>';
+            });
+    }
+
+    {% if forecast_chart_json %}
+    var forecastChartData = {{ forecast_chart_json | safe }};
+    Plotly.newPlot('forecastChart', forecastChartData.data, forecastChartData.layout, {responsive: true});
+    {% endif %}
+</script>
+{% endblock %}

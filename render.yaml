@@ -1,0 +1,7 @@
+services:
+  - type: web
+    name: real-estate-market-analyzer
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app:app --workers=2 --threads=2 --timeout=60
+    plan: free

@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+
+{% block title %}Pan-India Investment Opportunities | Real Estate Market Analysis Tool{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="fw-bold text-dark mb-1">Pan-India High-Yield Investment Finder</h1>
+        <p class="text-secondary mb-0">Algorithmic discovery of properties priced below market fair value with strong ROI and rental yields across Indian Metros.</p>
+    </div>
+</div>
+
+<!-- Filters Card -->
+<div class="card p-4 mb-4">
+    <form action="{{ url_for('investments') }}" method="GET" class="row g-3 align-items-end">
+        <div class="col-md-4">
+            <label class="form-label small fw-semibold">Metro City Filter</label>
+            <select name="city" class="form-select">
+                <option value="All" {% if selected_city == 'All' %}selected{% endif %}>🇮🇳 All India (8 Metros)</option>
+                {% for c in cities %}
+                <option value="{{ c }}" {% if c == selected_city %}selected{% endif %}>{{ c }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-3">
+            <label class="form-label small fw-semibold">Max Budget (₹ Lakhs)</label>
+            <input type="number" name="budget" class="form-control" value="{{ budget|int }}" step="25" min="25">
+        </div>
+        <div class="col-md-3">
+            <label class="form-label small fw-semibold">Min. Expected Total ROI (% p.a.)</label>
+            <select name="min_roi" class="form-select">
+                <option value="8.0" {% if min_roi == 8.0 %}selected{% endif %}>8.0%+ Total Annual ROI</option>
+                <option value="10.0" {% if min_roi == 10.0 %}selected{% endif %}>10.0%+ Total Annual ROI</option>
+                <option value="12.0" {% if min_roi == 12.0 %}selected{% endif %}>12.0%+ Total Annual ROI</option>
+                <option value="14.0" {% if min_roi == 14.0 %}selected{% endif %}>14.0%+ Total Annual ROI</option>
+            </select>
+        </div>
+        <div class="col-md-2">
+            <button type="submit" class="btn btn-primary w-100 fw-semibold">
+                <i class="fa-solid fa-filter me-1"></i> Filter Deals
+            </button>
+        </div>
+    </form>
+</div>
+
+<!-- Results Section -->
+<div class="card p-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h5 class="fw-bold mb-0">
+            <i class="fa-solid fa-gem text-warning me-2"></i>Ranked Opportunities 
+            <span class="badge bg-light text-dark border ms-2">{{ opportunities|length }} Properties Found</span>
+        </h5>
+        <div class="small text-muted">
+            <b>IOI Score:</b> (40% Undervaluation Discount + 35% Historical CAGR + 25% Rental Yield)
+        </div>
+    </div>
+
+    {% if opportunities %}
+    <div class="table-responsive">
+        <table class="table table-custom table-hover align-middle mb-0">
+            <thead>
+                <tr>
+                    <th>IOI Score</th>
+                    <th>Metro City</th>
+                    <th>Locality & Specs</th>
+                    <th>Asking Price</th>
+                    <th>Rate / Sq.Ft</th>
+                    <th>Area Baseline</th>
+                    <th>Discount</th>
+                    <th>Rental Yield</th>
+                    <th>CAGR</th>
+                    <th>Total ROI</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for op in opportunities %}
+                <tr>
+                    <td>
+                        <span class="ioi-badge {% if op.ioi_score >= 75 %}ioi-badge-high{% else %}ioi-badge-medium{% endif %}">
+                            <i class="fa-solid fa-fire text-danger"></i> {{ op.ioi_score }} / 100
+                        </span>
+                    </td>
+                    <td>
+                        <span class="badge bg-primary-subtle text-primary fw-bold">{{ op.city }}</span>
+                    </td>
+                    <td>
+                        <div class="fw-bold text-dark">{{ op.location }}</div>
+                        <small class="text-muted">{{ op.bhk }} BHK • {{ op.bath }} Bath • {{ op.total_sqft }} sq.ft</small>
+                    </td>
+                    <td class="fw-bold text-primary">₹ {{ op.price_lakhs }} L</td>
+                    <td>₹ {{ "{:,}".format(op.price_per_sqft) }}</td>
+                    <td class="text-muted">₹ {{ "{:,}".format(op.area_avg_rate) }}</td>
+                    <td>
+                        <span class="badge bg-success-subtle text-success fw-bold">-{{ op.discount_pct }}% Below Avg</span>
+                    </td>
+                    <td class="fw-semibold text-secondary">{{ op.rental_yield }}%</td>
+                    <td class="fw-semibold text-success">+{{ op.projected_cagr }}%</td>
+                    <td>
+                        <span class="badge bg-primary fs-6 px-2 py-1">{{ op.total_roi }}%</span>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="text-center py-5 text-muted">
+        <i class="fa-solid fa-magnifying-glass fs-1 mb-2"></i>
+        <h6>No properties matched your criteria</h6>
+        <p class="small">Try increasing the budget or switching to All India / other metro cities.</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

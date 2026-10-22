@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+
+{% block title %}National Real Estate Trends | Real Estate Market Analysis Tool{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="fw-bold text-dark mb-1">Pan-India Real Estate Market Trends & Analytics</h1>
+        <p class="text-secondary mb-0">Cross-metro pricing indices, capital appreciation CAGRs, and rental yields across 8 Indian economic hubs.</p>
+    </div>
+    <div>
+        <a href="{{ url_for('forecast') }}" class="btn btn-primary rounded-pill px-3 shadow-sm">
+            <i class="fa-solid fa-calculator me-1"></i> Forecast Property Price
+        </a>
+    </div>
+</div>
+
+<!-- Plotly Interactive Visualizations -->
+<div class="row g-4 mb-4">
+    <div class="col-lg-6">
+        <div class="card h-100 p-3">
+            <h5 class="fw-bold mb-2"><i class="fa-solid fa-chart-column text-primary me-2"></i>Metro Average Rate Comparison (₹ / Sq.Ft.)</h5>
+            <div id="metroChart"></div>
+        </div>
+    </div>
+    
+    <div class="col-lg-6">
+        <div class="card h-100 p-3">
+            <h5 class="fw-bold mb-2"><i class="fa-solid fa-percent text-success me-2"></i>Capital Appreciation CAGR vs. Rental Yield</h5>
+            <div id="growthChart"></div>
+        </div>
+    </div>
+</div>
+
+<!-- Locality Benchmarks Data Table -->
+<div class="card p-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h5 class="fw-bold mb-0"><i class="fa-solid fa-table-list text-primary me-2"></i>India's Prime Localities & Corridors Benchmark</h5>
+        <span class="badge bg-secondary-subtle text-secondary">{{ top_localities|length }} High-Growth Corridors</span>
+    </div>
+    
+    <div class="table-responsive">
+        <table class="table table-custom table-hover align-middle mb-0">
+            <thead>
+                <tr>
+                    <th>Metro City</th>
+                    <th>Locality / Corridor</th>
+                    <th>Economic Tier</th>
+                    <th>Avg. Rate / Sq.Ft.</th>
+                    <th>Historical CAGR</th>
+                    <th>Rental Yield</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in top_localities %}
+                <tr>
+                    <td><span class="badge bg-primary-subtle text-primary fw-bold">{{ item.city }}</span></td>
+                    <td class="fw-bold text-dark">{{ item.location }}</td>
+                    <td><small class="text-muted">{{ item.tier }}</small></td>
+                    <td class="text-primary fw-semibold">₹ {{ "{:,}".format(item.rate_per_sqft) }}</td>
+                    <td class="text-success fw-bold">+{{ item.cagr }}% p.a.</td>
+                    <td class="text-secondary fw-semibold">{{ item.rental_yield }}%</td>
+                    <td>
+                        <a href="{{ url_for('investments', city=item.city) }}" class="btn btn-sm btn-outline-primary">
+                            View Deals
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    var metroData = {{ chart_metro_json | safe }};
+    Plotly.newPlot('metroChart', metroData.data, metroData.layout, {responsive: true});
+
+    var growthData = {{ chart_growth_json | safe }};
+    Plotly.newPlot('growthChart', growthData.data, growthData.layout, {responsive: true});
+</script>
+{% endblock %}
